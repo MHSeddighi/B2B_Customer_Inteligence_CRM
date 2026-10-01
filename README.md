@@ -1,156 +1,110 @@
-# 1. هدف محصول
+# B2B Customer Intelligence & CRM
 
-ساخت سیستمی که داده‌های پراکنده هر مشتری را به یک تصمیم قابل اقدام برای مدیر فروش تبدیل کند.
+<p align="center">
+  <img src="docs/dashboard.png" alt="B2B Customer Intelligence Dashboard" width="100%">
+</p>
 
-مسیر اصلی محصول:
+> **From fragmented customer data to actionable decisions for B2B sales teams.**
 
-**Data → Current State → Signals → Customer Status → Recommended Action → Evidence**
+An AI-powered Customer Intelligence and CRM platform that unifies sales, payments, complaints, CRM interactions, offers, product requests, quality records, and customer economics into a single **Customer 360**.
 
-سیستم نباید فقط بگوید چه اتفاقی افتاده؛ باید بگوید:
+Instead of simply showing what happened, the system answers:
 
-1. چه چیزی تغییر کرده؟
-2. وضعیت فعلی چیست؟
-3. چرا مهم است؟
-4. چه کاری باید انجام شود؟
-5. این نتیجه بر اساس چه داده‌ای است؟
+**What changed? → What is the current state? → Why does it matter? → What should we do next? → What evidence supports it?**
 
 ---
 
-# 2. کاربر اصلی
+## Product Overview
 
-**Sales Manager / Account Manager**
+Traditional CRM systems are good at recording customer interactions, but sales teams often still need to manually combine information from multiple systems before deciding what to do.
 
-کاربر باید بتواند در کمتر از چند دقیقه بفهمد:
+This project introduces a decision-oriented layer on top of fragmented customer data.
 
-- کدام مشتری نیاز به توجه دارد؟
-- مشکل یا فرصت چیست؟
-- آیا مشکل هنوز وجود دارد یا حل شده؟
-- مشتری ارزش پیگیری دارد یا نه؟
-- الان چه اقدامی باید انجام شود؟
-
----
-
-# 3. خروجی نهایی هر مشتری
-
-برای هر مشتری سیستم باید یک Object نهایی شبیه این تولید کند:
-
-```json
-{
-  "customer_id": "CUST-058",
-  "status": "Needs Attention",
-  "priority": "High",
-
-  "summary": "مشتری ارزشمند است اما خرید در حال کاهش است و اخیراً مشکل کیفیت داشته.",
-
-  "signals": [],
-  "recommended_actions": [],
-  "evidence": [],
-  "confidence": "High"
-}
+```mermaid
+flowchart LR
+    A[Raw Customer Data] --> B[Customer 360]
+    B --> C[Current State]
+    C --> D[Signals]
+    D --> E[Customer Classification]
+    E --> F[Recommended Action]
+    F --> G[AI Explanation]
+    G --> H[Evidence]
 ```
 
----
+The core product pipeline is:
 
-# 4. تقسیم پروژه
-
-پروژه به 7 ماژول مستقل تقسیم شود:
-
-1. Data & Tool Layer
-2. Customer 360
-3. Current State Engine
-4. Signal Engine
-5. Customer Classification
-6. Action Engine
-7. AI Explanation & Evidence
-
-هر بخش می‌تواند Owner جدا داشته باشد.
+> **Data → Current State → Signals → Customer Status → Recommended Action → Evidence**
 
 ---
 
-# MODULE 1 — Data & Tool Layer
+# Why This Exists
 
-## مسئولیت
+A customer may have:
 
-فرد مسئول این بخش باید تمام Data Sourceها را برای سیستم قابل استفاده کند.
+- declining purchases
+- unresolved quality complaints
+- delayed payments
+- high historical profitability
+- unused wallet share
+- rejected offers
+- weakening relationships
 
-## کارهایی که باید انجام شود
+Individually, none of these signals tells the complete story.
 
-برای هر جدول مشخص شود:
+The system combines them into a contextual decision.
 
-- نام جدول
-- کاربرد جدول
-- Grain جدول
-- Primary Key
-- Foreign Keys
-- Entityها
-- معنی ستون‌ها
-- ارتباط با جدول‌های دیگر
-- محدودیت‌ها و مشکلات Data Quality
-- چه سؤال‌هایی با این جدول قابل پاسخ است
-
-مثلاً:
-
-### فروش
-
-کاربرد:
-
-> فهمیدن اینکه مشتری چه چیزی، چه زمانی، با چه مقدار و چه قیمتی خریده است.
-
-Tool احتمالی:
+For example:
 
 ```text
-get_customer_sales(
-    customer_id,
-    start_date,
-    end_date,
-    product_id
-)
+Purchase volume ↓ 28%
+        +
+Quality complaint still ACTIVE
+        +
+Real Profit = HIGH
+        +
+LTV = HIGH
+        ↓
+Customer = "Resolve the Problem"
+        ↓
+Action = Schedule Quality Review Meeting
 ```
 
-خروجی باید Structured باشد.
+The goal is not to replace the account manager.
 
-## Toolهای مورد نیاز
-
-حداقل:
-
-```text
-get_customer_profile()
-get_customer_sales()
-get_customer_invoices()
-get_customer_payments()
-get_customer_complaints()
-get_customer_crm_interactions()
-get_customer_offers()
-get_customer_wallet_share()
-get_customer_development_requests()
-get_customer_quality_records()
-get_customer_costs()
-```
-
-## نکته مهم
-
-LLM نباید مستقیماً SQL آزاد روی تمام دیتابیس بزند.
-
-Toolها بهتر است کنترل‌شده و قابل پیش‌بینی باشند.
-
-## Definition of Done
-
-این بخش تمام شده است اگر:
-
-- برای یک Customer\_ID بتوان تمام داده‌های مرتبط را بازیابی کرد.
-- Duplicate Join ایجاد نشود.
-- Customer Identity Mapping حل شده باشد.
-- هر خروجی Source و Timestamp داشته باشد.
+The goal is to give the account manager **the right context before making a decision.**
 
 ---
 
-# MODULE 2 — Customer 360
+# Core User
 
-## مسئولیت
+### Sales Manager / Account Manager
 
-تبدیل داده‌های مختلف به یک View واحد از مشتری.
+The primary user should be able to understand a customer in less than 30 seconds:
 
-## خروجی مورد انتظار
+1. What is the customer's current situation?
+2. What has changed?
+3. Is the problem still active?
+4. Why does it matter commercially?
+5. What should I do now?
+6. What evidence supports this recommendation?
+
+---
+
+# Customer 360
+
+Each customer receives a unified view across the organization's major data sources.
+
+<p align="center">
+  <img src="docs/customer-360.png" alt="Customer 360" width="100%">
+</p>
+
+### API
+
+```http
+GET /api/customers/{customer_id}/360
+```
+
+Example response:
 
 ```json
 {
@@ -167,88 +121,33 @@ Toolها بهتر است کنترل‌شده و قابل پیش‌بینی با�
 }
 ```
 
-## صفحه UI پیشنهادی
-
-بالای صفحه:
-
-**Customer Name**
-
-سپس:
-
-```text
-Current Status
-Priority
-Real Profit
-Purchase Trend
-Payment Status
-Wallet Share
-Relationship Status
-```
-
-پایین‌تر:
-
-### Recent Events
-
-مثلاً:
-
-```text
-12 Aug — Payment received
-8 Aug — CRM meeting
-2 Aug — Complaint closed
-26 Jul — Order placed
-```
-
-## نکته
-
-Customer 360 نباید فقط چند جدول کنار هم باشد.
-
-باید یک **Current Account View** ایجاد کند.
-
-## Definition of Done
-
-با یک API Call:
-
-```text
-GET /customer/{id}/360
-```
-
-باید View کامل مشتری برگردد.
-
 ---
 
-# MODULE 3 — Current State Engine
+# Decision Intelligence
 
-این بخش بسیار مهم است.
+The system separates **events**, **current state**, **signals**, and **actions**.
 
-## مسئولیت
+This distinction is one of the core design principles of the project.
 
-تشخیص اینکه یک Event قدیمی هنوز مهم است یا نه.
+## Historical Event ≠ Current Problem
 
-مثلاً:
-
-```text
-Complaint happened
-```
-
-کافی نیست.
-
-باید بفهمیم:
+For example:
 
 ```text
 Complaint happened
-↓
+        ↓
 Was it resolved?
-↓
-Did it repeat?
-↓
-Did later purchases recover?
-↓
+        ↓
+Did it happen again?
+        ↓
+Did purchasing recover?
+        ↓
 Is it still relevant today?
 ```
 
-## Stateهای پیشنهادی
+Therefore every important business problem receives a current state.
 
-برای Issueها:
+### Supported states
 
 ```text
 NEW
@@ -259,100 +158,55 @@ RECURRING
 STALE
 ```
 
-## مثال Complaint
-
-ورودی:
-
-- Complaint Severity
-- Complaint Date
-- Resolution
-- Lot Quality
-- Recent Orders
-- New Complaints
-
-خروجی:
+Example:
 
 ```json
 {
   "issue": "Quality",
   "state": "RESOLVED",
-  "severity": "High",
-  "current_relevance": "Low",
-  "reason": "شکایت بسته شده و دو خرید بعدی بدون شکایت بوده‌اند."
+  "severity": "HIGH",
+  "current_relevance": "LOW",
+  "reason": "The complaint was closed and the following two purchases had no related complaints."
 }
 ```
 
-## برای چه چیزهایی State بسازیم؟
-
-### Quality
-
-- مشکل هنوز وجود دارد؟
-- رفع شده؟
-- تکرار شده؟
-
-### Payment
-
-- هنوز بدهکار است؟
-- پرداخت کرده؟
-- رفتار پرداخت بهتر شده؟
-
-### Purchase Decline
-
-- کاهش ادامه دارد؟
-- خرید برگشته؟
-- فصلی بوده؟
-
-### Relationship
-
-- رابطه اخیراً بهتر یا بدتر شده؟
-
-### Offer
-
-- Offer هنوز Open است؟
-- Accepted؟
-- Rejected؟
-- Expired؟
-
-## Definition of Done
-
-هر Problem Signal باید علاوه بر History دارای **Current State** باشد.
-
 ---
 
-# MODULE 4 — Signal Engine
+# Signal Engine
 
-## مسئولیت
+Business signals are calculated deterministically with code.
 
-محاسبه Signalها با Code.
+The LLM is **not responsible for calculating financial or analytical metrics.**
 
-LLM نباید Signal اصلی را محاسبه کند.
-
-## Signalهای MVP
-
-### 1. RFM
-
-خروجی:
+Each signal exposes:
 
 ```text
-R
-F
-M
-Previous RFM
-Current RFM
-Movement
+value
+status
+trend
+reason_codes
+evidence_ids
+calculated_at
 ```
 
-مهم‌تر از Score:
+## Core Signals
+
+### RFM
+
+Tracks customer recency, frequency, and monetary value.
+
+The system focuses not only on the current score, but also on movement:
 
 ```text
-5-5-5 → 3-4-5
+Previous: 5-5-5
+Current:  3-4-5
+
+→ Customer engagement is weakening
 ```
 
 ---
 
-### 2. LTV
-
-خروجی:
+### Customer Lifetime Value
 
 ```text
 Estimated Future Value
@@ -360,17 +214,19 @@ Confidence
 Assumptions
 ```
 
-برای MVP می‌تواند Formula-based باشد.
+The MVP can use a transparent formula-based model.
 
 ---
 
-### 3. Share of Wallet
+### Share of Wallet
 
 ```text
-Our Spend / Estimated Customer Spend
+Our Spend
+──────────────
+Estimated Customer Spend
 ```
 
-خروجی:
+Tracked over time:
 
 ```text
 Current Wallet Share
@@ -382,34 +238,35 @@ Source
 
 ---
 
-### 4. Real Profit
+### Real Profit
 
-حداقل:
+The system distinguishes revenue from actual economic value.
 
 ```text
 Revenue
 - COGS
 - Returns
 - Cost of Money
-= Real Profit
+----------------
+Real Profit
 ```
 
-هم Amount و هم Margin نمایش داده شود.
+Both absolute profit and margin are exposed.
 
 ---
 
-### 5. Payment Behaviour
+### Payment Behaviour
 
-موارد مهم:
+Tracks:
 
 ```text
-Average Delay
+Average Payment Delay
 Outstanding Balance
 Returned Cheques
-Trend
+Payment Trend
 ```
 
-خروجی مثلاً:
+Classification:
 
 ```text
 GOOD
@@ -419,17 +276,17 @@ BAD
 
 ---
 
-### 6. Relationship Quality
+### Relationship Quality
 
-ورودی:
+Based on:
 
 - CRM interactions
-- complaints
+- complaint history
 - offer acceptance
 - interaction recency
 - unresolved issues
 
-خروجی:
+Output:
 
 ```text
 STRONG
@@ -440,11 +297,9 @@ POOR
 
 ---
 
-### 7. Purchase Trend
+### Purchase Trend
 
-مقایسه رفتار مشتری با History خودش.
-
-خروجی:
+Compared against the customer's own historical behaviour.
 
 ```text
 GROWING
@@ -456,21 +311,25 @@ ABNORMAL_DROP
 
 ---
 
-### 8. Churn Risk
+### Churn Risk
 
-ترکیبی از Signalهای دیگر.
-
-مثلاً:
+A composite signal based on multiple indicators.
 
 ```text
 Purchase Decline
-+ Relationship Decline
-+ Complaint
-+ Offer Rejection
-+ Interaction Gap
+        +
+Relationship Decline
+        +
+Complaint
+        +
+Offer Rejection
+        +
+Interaction Gap
+        ↓
+Churn Risk
 ```
 
-خروجی:
+Output:
 
 ```text
 LOW
@@ -478,139 +337,67 @@ MEDIUM
 HIGH
 ```
 
-همراه با Reason Codes.
+The system also exposes the reason codes behind the risk.
 
 ---
 
-### 9. Cross-sell Opportunity
+### Cross-sell Opportunity
 
-بررسی:
+Combines:
 
-- Product Mix
-- Wallet Gap
-- Similar Customers
-- Development Requests
+- Product mix
+- Wallet gap
+- Similar customer behaviour
+- Development requests
 - Offers
 - Profitability
-- Payment Behaviour
+- Payment behaviour
 
-خروجی:
+Example:
 
 ```json
 {
   "product": "Product X",
   "opportunity": "HIGH",
-  "reason": "...",
+  "reason": "Customer has high profitability and low estimated wallet share.",
   "blocked_by": []
 }
 ```
 
-## Definition of Done
-
-برای هر مشتری API زیر وجود داشته باشد:
-
-```text
-GET /customer/{id}/signals
-```
-
-و هر Signal شامل این‌ها باشد:
-
-```text
-value
-status
-trend
-reason_codes
-evidence_ids
-calculated_at
-```
-
 ---
 
-# MODULE 5 — Customer Classification
+# Customer Classification
 
-هدف این بخش ساده‌کردن 9 Signal برای مدیر فروش است.
+Nine analytical signals are useful for the system, but they are too complicated to present directly to a sales manager.
 
-به‌جای اصطلاحات پیچیده، پیشنهاد می‌شود فقط 4 وضعیت داشته باشیم.
+The system therefore converts them into four actionable customer states.
 
-## 1. رشد بده
+| Status | Meaning |
+|---|---|
+| **Grow** | Valuable customer with identifiable growth potential |
+| **Retain** | Valuable customer that should be protected |
+| **Fix** | Valuable customer with an active problem blocking growth |
+| **Reduce Attention** | Low-value or low-potential customer with high service cost |
 
-مشتری خوب است و ظرفیت رشد دارد.
-
-مثلاً:
-
-```text
-Real Profit HIGH
-Wallet Share LOW
-Payment GOOD
-Relationship GOOD
-```
-
-→ **رشد بده**
-
----
-
-## 2. حفظ کن
-
-مشتری ارزشمند است ولی باید مراقب او باشیم.
+Example:
 
 ```text
 High Value
-High Profit
-High Wallet Share
++
+Purchase Decline
++
+Active Complaint
+        ↓
+FIX
 ```
 
-→ **حفظ کن**
+Every customer receives exactly **one primary status**, together with the reasons behind it.
 
 ---
 
-## 3. مشکل را حل کن
+# Action Engine
 
-مشتری ارزش دارد اما چیزی جلوی رشد را گرفته.
-
-مثلاً:
-
-```text
-High Value
-Purchase ↓
-Complaint Active
-```
-
-یا:
-
-```text
-Sales High
-Payment Bad
-Real Profit Low
-```
-
-→ **مشکل را حل کن**
-
----
-
-## 4. کمتر وقت بگذار
-
-```text
-Low Profit
-Low Potential
-Low Wallet Opportunity
-High Cost to Serve
-```
-
-→ **کمتر وقت بگذار**
-
-## Definition of Done
-
-هر مشتری دقیقاً یک **Primary State** داشته باشد و سیستم توضیح دهد چرا.
-
----
-
-# MODULE 6 — Action Engine
-
-## مسئولیت
-
-تبدیل وضعیت مشتری به Action مشخص.
-
-Actionها باید محدود و قابل کنترل باشند.
+The Action Engine converts customer status and constraints into a controlled set of recommended actions.
 
 ## Action Catalog
 
@@ -666,56 +453,47 @@ REDUCE_ATTENTION
 
 ---
 
-# Action Rules
+# Opportunity ≠ Action
 
-مثلاً:
+A major design principle is that an opportunity should **not automatically become an action**.
 
-```text
-IF
-Churn Risk = HIGH
-AND LTV = HIGH
-AND Complaint State = ACTIVE
-
-THEN
-QUALITY_REVIEW_MEETING
-```
-
----
+For example:
 
 ```text
-IF
 Wallet Share = LOW
-AND Real Profit = HIGH
-AND Payment = GOOD
-AND Relationship != POOR
-
-THEN
++
+Real Profit = HIGH
++
+Payment = GOOD
++
+Relationship = GOOD
+        ↓
 CROSS_SELL_PRODUCT
 ```
 
----
+But:
 
 ```text
-IF
-Cross Sell = HIGH
-BUT Payment = BAD
-
-THEN
+Cross-sell Opportunity = HIGH
++
+Payment = BAD
+        ↓
 FOLLOW_UP_PAYMENT
+```
 
-NOT
+Not:
+
+```text
 SEND_OFFER
 ```
 
-این قسمت بسیار مهم است:
-
-**Opportunity ≠ Action**
-
-Constraintها باید قبل از Action بررسی شوند.
+Commercial constraints must be evaluated before recommending an action.
 
 ---
 
 # Action Object
+
+Every recommendation follows a structured contract:
 
 ```json
 {
@@ -727,583 +505,926 @@ Constraintها باید قبل از Action بررسی شوند.
     "ACTIVE_QUALITY_ISSUE",
     "HIGH_LTV"
   ],
-  "objective": "رفع مشکل کیفیت و بازیابی حجم خرید"
+  "objective": "Resolve the quality issue and recover purchasing volume."
 }
 ```
 
+This makes recommendations explainable, testable, and suitable for future workflow automation.
+
 ---
 
-# MODULE 7 — AI Explanation & Evidence Layer
+# AI Explanation Layer
 
-## مسئولیت LLM
+The LLM is used where language understanding is valuable — **not where deterministic business logic is required.**
 
-LLM قرار نیست تصمیم مالی محاسبه کند.
+## The AI handles
 
-وظایفش:
+### Customer summaries
 
-### 1. خلاصه کردن Customer 360
+> The customer remains profitable, but purchasing volume has declined by 28% during the last three months.
 
-مثلاً:
+### CRM and complaint understanding
 
-> مشتری همچنان سودآور است، اما خرید سه ماه اخیر ۲۸٪ کاهش یافته است.
-
-### 2. خواندن متن CRM و Complaint
-
-استخراج:
+Extract:
 
 ```text
 Problem
 Cause
 Sentiment
 Commitment
-Next step
+Next Step
 ```
 
-### 3. توضیح Signalها
+### Signal explanation
 
-### 4. توضیح Action
+The AI can translate structured signals into natural language.
 
-مثلاً:
+### Action explanation
 
-> جلسه بررسی کیفیت پیشنهاد شده زیرا افت خرید بعد از دو شکایت کیفی شروع شده و آخرین شکایت هنوز باز است. مشتری همچنان LTV بالایی دارد.
+For example:
 
----
-
-# Evidence
-
-هر Claim باید Evidence داشته باشد.
-
-مثلاً UI:
-
-**Why this action?**
-
-> Purchase ↓ 28%\
-> Quality complaint still active\
-> Customer LTV: High\
-> Real Profit: 11.8%
-
-**View evidence →**
-
-سپس رکوردهای واقعی باز شوند.
-
-## Definition of Done
-
-LLM نباید عدد جدید اختراع کند.
-
-تمام عددها باید از Signal Engine یا Data Tools وارد Prompt شوند.
+> A quality review meeting is recommended because purchasing started declining after two quality complaints, while the latest complaint is still active and the customer remains highly valuable.
 
 ---
 
-# 5. Contract بین تمام تیم‌ها
+# Evidence-Grounded AI
 
-همه Moduleها باید حول یک Customer ID مشترک کار کنند.
+Every important claim should be traceable to its underlying data.
 
-Flow:
+Example:
 
 ```text
-Customer_ID
-    ↓
-Customer 360
-    ↓
-Current States
-    ↓
-Signals
-    ↓
-Classification
-    ↓
-Actions
-    ↓
-LLM Explanation
-    ↓
-Evidence
+WHY THIS ACTION?
+
+Purchase volume
+↓ 28%
+
+Quality complaint
+ACTIVE
+
+Customer LTV
+HIGH
+
+Real Profit
+11.8%
+```
+
+The user can select:
+
+**View Evidence**
+
+and inspect the underlying records.
+
+The LLM must never invent numerical values.
+
+Numbers are supplied by the Data and Signal layers.
+
+---
+
+# System Architecture
+
+```mermaid
+flowchart TB
+
+    subgraph Sources["Data Sources"]
+        S1[Sales]
+        S2[Invoices]
+        S3[Payments]
+        S4[Complaints]
+        S5[CRM]
+        S6[Offers]
+        S7[Quality]
+        S8[Product Requests]
+        S9[Market Signals]
+    end
+
+    subgraph Data["Data & Tool Layer"]
+        D1[DuckDB]
+        D2[Read-only Query Tools]
+        D3[Customer Identity Mapping]
+    end
+
+    subgraph Intelligence["Customer Intelligence"]
+        C1[Customer 360]
+        C2[Current State Engine]
+        C3[Signal Engine]
+    end
+
+    subgraph Decision["Decision Layer"]
+        E1[Customer Classification]
+        E2[Action Engine]
+        E3[Constraints & Rules]
+    end
+
+    subgraph AI["AI Layer"]
+        A1[CRM / Complaint Extraction]
+        A2[Customer Summary]
+        A3[Explanation]
+        A4[Evidence Grounding]
+    end
+
+    subgraph App["Application"]
+        F1[FastAPI]
+        F2[React Frontend]
+        F3[Customer 360]
+        F4[Sales Copilot]
+    end
+
+    Sources --> D1
+    D1 --> D2
+    D3 --> C1
+    D2 --> C1
+
+    C1 --> C2
+    C2 --> C3
+    C3 --> E1
+    E1 --> E2
+    E3 --> E2
+
+    C1 --> A2
+    C2 --> A3
+    C3 --> A3
+    E2 --> A3
+    D2 --> A4
+
+    E2 --> F1
+    A3 --> F1
+    F1 --> F2
+    F2 --> F3
+    F2 --> F4
 ```
 
 ---
 
-# 6. چیزی که در UI باید دیده شود
+# Data Layer
 
-صفحه اصلی می‌تواند لیست مشتریان باشد:
+The current implementation uses **DuckDB** as the analytical database.
 
-| Customer | وضعیت          | Priority | مشکل/فرصت     | Action           |
-| -------- | -------------- | -------- | ------------- | ---------------- |
-| A        | رشد بده        | High     | Wallet gap    | Cross-sell       |
-| B        | مشکل را حل کن  | High     | Late payment  | Payment meeting  |
-| C        | حفظ کن         | Medium   | Stable        | Monitor          |
-| D        | کمتر وقت بگذار | Low      | Low potential | Reduce attention |
+```text
+data/
+└── processed/
+    └── customer_360.duckdb
+```
 
-با کلیک روی مشتری:
+The source workbook is converted into individual tables.
+
+| Table | Source |
+|---|---|
+| `customers` | Customers |
+| `products` | Products |
+| `invoices` | Invoices |
+| `sales` | Sales |
+| `realized_costs` | Realized Costs |
+| `collections` | Collections |
+| `complaints` | Complaints |
+| `complaint_links` | Complaint Links |
+| `crm_interactions` | CRM Interactions |
+| `dev_requests` | Development Requests |
+| `quality_labs` | Quality Lots |
+| `hembaft_lots` | Hembaft Lots |
+| `offers` | Offers |
+| `wallet_share` | Wallet Share |
+| `market_signals` | Market Signals |
+| `monthly_costs` | Monthly Cost Estimates |
+
+Rebuild the database with:
+
+```bash
+python scripts/build_db.py
+```
+
+---
+
+# MCP Data Access
+
+The database is exposed through an MCP server:
+
+```text
+backend/mcp/duckdb_server.py
+```
+
+Primary tools:
+
+```text
+query(sql, max_rows)
+list_tables()
+get_schema(table)
+```
+
+The primary analytical operation is a **read-only SQL query**.
+
+The LLM does not receive unrestricted database access.
+
+Instead, it operates through controlled tools.
+
+```mermaid
+flowchart LR
+    LLM[LLM Agent]
+    --> Tool[MCP Query Tool]
+    --> DB[(DuckDB)]
+    --> Tool
+    --> LLM
+```
+
+The database connection is read-only and external/write operations are blocked.
+
+---
+
+# FastAPI Backend
+
+The backend provides the application API.
+
+```text
+backend/
+├── main.py
+├── api_data.py
+├── agents/
+│   ├── context.py
+│   └── contracts.py
+└── mcp/
+    ├── duckdb_server.py
+    └── schema_context.py
+```
+
+## Main endpoints
+
+```http
+GET  /api/health
+GET  /api/dashboard
+GET  /api/customers
+GET  /api/customers/{id}/360
+POST /api/chat
+```
+
+Example:
+
+```http
+POST /api/chat
+Content-Type: application/json
+```
+
+```json
+{
+  "question": "Which customers need attention?",
+  "history": [],
+  "session_id": "demo-session"
+}
+```
+
+---
+
+# Copilot Architecture
+
+The Copilot is designed around a bounded two-stage LLM pipeline.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant API as FastAPI
+    participant P as LLM Planner
+    participant MCP as MCP Query
+    participant DB as DuckDB
+    participant C as LLM Composer
+
+    U->>API: Business Question
+    API->>P: Question + Schema Context
+    P->>MCP: Read-only SQL
+    MCP->>DB: Execute Query
+    DB-->>MCP: Structured Result
+    MCP-->>API: resultId + Result
+    API->>C: Question + Result Metadata
+    C-->>API: Structured Blocks
+    API-->>U: UI Response
+```
+
+### Design goals
+
+- One planning call for data questions
+- One composition call
+- One SQL query by default
+- No schema discovery unless required
+- No full query results in conversation history
+- Structured JSON contracts
+- Result reuse across follow-up questions
+- Bounded context size
+- Explicit error handling
+
+---
+
+# Result Store
+
+Exact database results are kept outside the LLM conversation history.
+
+```text
+Conversation
+     │
+     ├── Question
+     ├── Answer Summary
+     ├── Analytical State
+     └── resultId
+              │
+              ▼
+        Result Store
+              │
+              ▼
+        Exact DB Result
+```
+
+This keeps the context small while allowing follow-up questions to reuse previous results.
+
+For example:
+
+```text
+User:
+Show me customers with declining sales.
+
+Assistant:
+[table → resultId=r1]
+
+User:
+What about their complaints?
+
+Assistant:
+reuse r1 + query complaints
+```
+
+---
+
+# Structured UI Contract
+
+The backend does not return a single block of generated Markdown.
+
+It returns an ordered set of structured UI blocks.
+
+```json
+{
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "markdown",
+      "content": "## Sales analysis"
+    },
+    {
+      "id": "b2",
+      "type": "metric",
+      "resultId": "r1",
+      "label": "Sales Growth",
+      "valueKey": "growth"
+    },
+    {
+      "id": "b3",
+      "type": "chart",
+      "resultId": "r1",
+      "chartType": "line",
+      "xKey": "month",
+      "series": [
+        {
+          "dataKey": "sales",
+          "label": "Sales"
+        }
+      ]
+    }
+  ],
+  "results": {
+    "r1": {
+      "columns": ["month", "sales"],
+      "rows": [],
+      "n_rows": 8
+    }
+  }
+}
+```
+
+Supported block types:
+
+```text
+markdown
+metric
+chart
+histogram
+table
+recommendation
+customer_card
+product_card
+order_card
+```
+
+This allows the frontend to render the AI response as a real analytical interface rather than a chat transcript.
+
+---
+
+# Frontend
+
+The frontend is a **Persian RTL business application**.
+
+```text
+frontend/
+├── Customer Dashboard
+├── Customer List
+├── Customer 360
+└── AI Copilot
+```
+
+Technology:
+
+```text
+React
+TypeScript
+Vite
+Vazirmatn
+```
+
+The frontend consumes live backend data. Mock customer data has been removed from the main application flow.
+
+---
+
+# Suggested Product Screens
+
+## Dashboard
+
+The dashboard should answer:
+
+```text
+How is the customer portfolio doing?
+Which customers need attention?
+Where are the biggest opportunities?
+```
+
+Recommended sections:
+
+```text
+Portfolio KPIs
+↓
+Customer Status Distribution
+↓
+Purchase / Complaint Trends
+↓
+High-Priority Customers
+↓
+Emerging Opportunities
+```
+
+---
+
+## Customer List
+
+| Customer | Status | Priority | Main Signal | Recommended Action |
+|---|---|---:|---|---|
+| Customer A | Grow | High | Wallet Gap | Cross-sell |
+| Customer B | Fix | High | Late Payment | Payment Meeting |
+| Customer C | Retain | Medium | Stable | Monitor |
+| Customer D | Reduce Attention | Low | Low Potential | Reduce Attention |
+
+---
 
 ## Customer 360
 
-سپس:
+The customer page should follow this hierarchy:
 
-### Why now?
+```text
+Customer
+    ↓
+Current Status
+    ↓
+Why Now?
+    ↓
+Current Situation
+    ↓
+Signals
+    ↓
+Recommended Action
+    ↓
+Evidence
+    ↓
+Historical Events
+```
 
-سه Signal مهم.
-
-### Current situation
-
-مشکلات Open / Resolved.
-
-### Recommended Action
-
-یک Action اصلی.
-
-### Why?
-
-Evidence.
+The interface should prioritize **decision-relevant information**, not raw database fields.
 
 ---
 
-# 7. Demo Scenario پیشنهادی
+# Demo Scenario
 
-برای Demo بهتر است یک مشتری انتخاب شود که Story جذابی داشته باشد:
+The strongest demo uses two contrasting customers.
 
-```text
-مشتری قبلاً خوب بوده
-↓
-خرید کاهش یافته
-↓
-شکایت کیفیت ثبت شده
-↓
-بررسی Current State
-↓
-مشکل هنوز Active است
-↓
-Real Profit همچنان خوب است
-↓
-LTV بالا است
-↓
-نباید مشتری را رها کرد
-↓
-System = "مشکل را حل کن"
-↓
-Action = جلسه کیفیت
-↓
-Evidence نمایش داده شود
-```
-
-و مشتری دوم:
+## Scenario A — Fix a Valuable Customer
 
 ```text
-Wallet Share پایین
-+ Profit بالا
-+ Payment خوب
-+ Relationship خوب
-↓
-"رشد بده"
-↓
-Cross-sell Product X
+Previously strong customer
+        ↓
+Purchasing starts declining
+        ↓
+Quality complaint appears
+        ↓
+Current State Engine
+        ↓
+Complaint = ACTIVE
+        ↓
+Real Profit = HIGH
+        ↓
+LTV = HIGH
+        ↓
+Classification = FIX
+        ↓
+Action = QUALITY_REVIEW_MEETING
+        ↓
+Evidence
 ```
 
-با همین دو Case تقریباً تمام ارزش محصول قابل نمایش است.
+The system demonstrates that an old event is not enough — it must understand the customer's current state.
 
 ---
 
-# 8. تقسیم پیشنهادی بین اعضای تیم
+## Scenario B — Grow a Healthy Customer
 
-## Person 1 — Data
+```text
+Low Wallet Share
+        +
+High Profitability
+        +
+Good Payment Behaviour
+        +
+Strong Relationship
+        ↓
+Classification = GROW
+        ↓
+Cross-sell Opportunity
+        ↓
+CROSS_SELL_PRODUCT
+```
 
-مسئول:
+Together, these two scenarios demonstrate the two core capabilities:
 
-- Metadata
+**Risk resolution + Revenue growth**
+
+---
+
+# Team Architecture
+
+The project can be divided into five workstreams.
+
+### 01 — Data
+
+Responsible for:
+
+- Data metadata
 - Relationships
-- Identity Resolution
+- Identity resolution
 - Database
-- Tool Functions
+- Query tools
 
-تحویل:
+Deliverable:
 
 **Customer Data API**
 
 ---
 
-## Person 2 — Analytics
+### 02 — Analytics
 
-مسئول:
+Responsible for:
 
 - RFM
 - Real Profit
-- Payment
-- Wallet
+- Payment Behaviour
+- Wallet Share
 - Purchase Trend
 - LTV
 
-تحویل:
+Deliverable:
 
 **Signal Engine**
 
 ---
 
-## Person 3 — Decision Engine
+### 03 — Decision Engine
 
-مسئول:
+Responsible for:
 
 - Current State
-- Churn
-- Relationship
+- Churn Risk
+- Relationship Quality
 - Cross-sell
-- Classification
+- Customer Classification
 - Action Rules
 
-تحویل:
+Deliverable:
 
 **Decision API**
 
 ---
 
-## Person 4 — AI
+### 04 — AI
 
-مسئول:
+Responsible for:
 
-- Complaint Extraction
-- CRM Text Extraction
-- Customer Summary
-- Explanation
-- Evidence Grounding
+- Complaint extraction
+- CRM text extraction
+- Customer summaries
+- Explanations
+- Evidence grounding
 
-تحویل:
+Deliverable:
 
 **AI Synthesis Layer**
 
 ---
 
-## Person 5 — Frontend
+### 05 — Frontend
 
-مسئول:
+Responsible for:
 
-- Customer list
+- Dashboard
+- Customer List
 - Customer 360
 - Signals
-- Recommended Action
+- Recommended Actions
 - Evidence Drill-down
+- Copilot
 
-تحویل:
+Deliverable:
 
-**Demo Application**
-
-اگر اعضای تیم کمتر هستند، Data + Analytics و Decision + AI را ادغام کنید.
-
----
-
-# 9. قانون اصلی محصول
-
-هیچ Action نباید فقط به دلیل وجود یک Event صادر شود.
-
-همیشه:
-
-```text
-Historical Event
-+
-Current State
-+
-Customer Value
-+
-Commercial Context
-+
-Constraints
-=
-Action
-```
-
-مثلاً:
-
-```text
-Complaint exists
-```
-
-→ به تنهایی Action نیست.
-
-اما:
-
-```text
-Complaint ACTIVE
-+
-Purchase declining
-+
-Real Profit high
-+
-LTV high
-```
-
-→
-
-**جلسه بررسی کیفیت با اولویت بالا**
+**Customer Intelligence Application**
 
 ---
 
-# 01. Definition of Success
+# Repository Structure
 
-MVP موفق است اگر مدیر فروش بتواند روی یک مشتری کلیک کند و در کمتر از 30 ثانیه بفهمد:
-
-> این مشتری چه وضعیتی دارد؟
-
-> چه چیزی تغییر کرده؟
-
-> آیا مشکل هنوز وجود دارد؟
-
-> چرا برای من مهم است؟
-
-> الان دقیقاً چه کاری باید انجام دهم؟
-
-> سیستم بر چه اساسی این حرف را می‌زند؟
-
-اگر این شش سؤال جواب داده شوند، محصول هسته اصلی مسئله هکاتون را حل کرده است.
-# Customer 360 Database + Copilot Backend
-
-This repo now includes a **DuckDB database** holding each raw data sheet as its
-own table, a **DuckDB MCP server**, and a **FastAPI backend** that lets the
-frontend copilot answer questions with live database queries.
-
-## Database
-
-`data/processed/customer_360.duckdb` — one table per sheet in `data/raw/DATASET.xlsx`:
-
-| Table | Sheet |
-|---|---|
-| `customers` | مشتریان |
-| `products` | محصولات |
-| `invoices` | فاکتورها |
-| `sales` | فروش |
-| `realized_costs` | اجزای_هزینه_تحقق |
-| `collections` | وصول |
-| `complaints` | شکایات |
-| `complaint_links` | اتصال_شکایت |
-| `crm_interactions` | تعاملات_CRM |
-| `dev_requests` | درخواست_توسعه |
-| `quality_labs` | کیفیت_لات |
-| `hembaft_lots` | همبافت_لات |
-| `offers` | آفرها |
-| `wallet_share` | سهم_سبد |
-| `market_signals` | سیگنال_بازار |
-| `monthly_costs` | برآورد_هزینه_ماهانه |
-| `_meta` | table purpose / PK notes |
-
-Rebuild it any time with `python scripts/build_db.py`.
-
-## MCP server
-
-`backend/mcp/duckdb_server.py` exposes the DB as MCP tools over stdio:
-
-- `query(sql, max_rows)` — **primary analytical tool**: read-only SELECT /
-  WITH ... SELECT; returns `{resultId, columns, rows, n_rows, truncated,
-  returned_rows}`. resultId is generated **server-side**; the DB connection is
-  opened read-only and writes/external access are blocked.
-- `run_sql(...)` — alias of `query` for backward compatibility.
-- `list_tables()` / `get_schema(table)` — **fallback only** (schema discovery).
-
-The LLM gets a **compact static Customer360 schema + relationships**
-(`backend/mcp/schema_context.py`) embedded in its prompt, so it answers most
-business questions with **one `query` call** instead of discovering the schema
-each time. DuckDB-specific SQL notes (dates stored as TEXT → `CAST(x AS DATE)`,
-`strftime` not `to_char`) are included to reduce failed queries; a failed query
-is retried once with the DB error fed back to the LLM.
-
-Run standalone: `python -m backend.mcp.duckdb_server`
-
-## Backend API
-
-`backend/main.py` (FastAPI) — the frontend calls it:
-
-- `GET  /api/health`
-- `GET  /api/dashboard`        → live KPIs + purchase/complaint trends + segment/status distributions
-- `GET  /api/customers`        → real customer list with aggregated orders/revenue/complaints
-- `GET  /api/customers/{id}/360` → real Customer-360 (sales, complaints, collections, risk)
-- `POST /api/chat`  `{ "question": "...", "history": [...], "session_id": "..." }` → `{ blocks, results }`
-
-The read endpoints (`backend/api_data.py`) query the DuckDB directly (read-only)
-so the Dashboard, Customers list, and Customer-360 render **real data — no mock
-data**. The agent plans read-only SQL (using the static schema in context), runs
-it via the MCP `query` tool (each result gets a server-generated `resultId`),
-and composes an **ordered list of Blocks** — the strict UI contract shared with
-the frontend.
-
-### Bounded agent context (token efficiency)
-
-To keep the LLM context small and predictable, the agent keeps exact database
-results **out** of the conversation history (`backend/agents/context.py`):
-
-- **ResultStore**: exact MCP results live in a per-session store keyed by the
-  server-generated `resultId`, never inside history/state. Capped to
-  `MAX_STORED_RESULTS` (oldest evicted).
-- **History/state** only carry lightweight data: a compact summary of older
-  turns (max `MAX_LOG_ENTRIES` `{q, a}` pairs), the last `MAX_RECENT_MESSAGES`
-  full messages, a small structured analytical state (selected customer/product/
-  order, date range, filters, intent, active resultIds), and per-result metadata
-  (`resultId`, `purpose`, `columns`, `n_rows`).
-- The LLM is shown at most a tiny row sample (`MAX_SAMPLE_ROWS`) — never the full
-  grids — and the whole rendered context is capped (`MAX_CONTEXT_CHARS`).
-- **Result reuse**: follow-ups can reference an existing `resultId` (`kind: reuse`)
-  instead of re-querying the database.
-- The frontend sends a stable `session_id` (regenerated on "new chat"); the
-  backend holds per-session state in a bounded in-memory store (`MAX_SESSIONS`).
-
-`tests/test_agent_context.py` proves context size stays bounded as conversations
-and DB results grow, and that follow-ups reuse existing resultIds without
-re-querying.
-
-### Speed & token optimization
-
-The agent is tuned for minimal latency, tokens and tool calls:
-
-- **Short pipeline**: exactly one LLM *planning* step, then (for data) exactly
-  one LLM *composition* step — no per-turn intent classifier, no schema
-  discovery, no deterministic post-processing.
-- **Tool-calling planner contract**: the planner returns a `steps` array
-  (`{"tool": "query" | "reuse", "input": {...}}`); empty `steps` means a plain
-  conversational answer. The agent executes the steps in order and composes a
-  single reply over all results.
-- **Structured JSON contracts** (`backend/agents/contracts.py`): plans and blocks
-  are validated with pydantic (JSON Schema) instead of regex extraction, so the
-  LLM is steered to strict JSON and parsing never silently mis-fires.
-- **One SQL query by default**: the plan prompt prefers a single read-only query
-  and caps new queries (`MAX_QUERIES`); reuse steps never count against it.
-  DuckDB does filtering/aggregation/calculation/sort/limit — the LLM only
-  interprets results.
-- **Lean per-step system prompts**: the full schema is sent only on the planning
-  step (needed to write SQL); the composition and conversational steps use much
-  smaller prompts, cutting ~1.6k prompt chars per data request.
-- **Explicit failures**: plan/compose/DB failures surface an explicit message
-  instead of silently re-running the LLM or falling back to a generic reply.
-- **Bounded context + ResultStore** (above) keep exact DB results out of the LLM
-  context, and resultIds are reused across turns.
-
-Benchmark (`scripts/benchmark_agent.py`) against the live backend shows every
-request uses exactly **2 LLM calls** (plan + compose) and **1 SQL (MCP) call**
-for data questions (0 for chat), with small, bounded prompt sizes:
-
-```
-request        latency  LLM  SQL   ~tok  blocks
-count            14.7s    2    1   2491  markdown,metric,markdown
-top_customers    54.5s    2    1   2570  markdown,table,markdown
-sales_trend      76.3s    2    1   2621  markdown,chart,table,markdown
-complaints       44.5s    2    1   2539  markdown,table,markdown
+```text
+.
+├── backend/
+│   ├── agents/
+│   ├── mcp/
+│   ├── main.py
+│   └── api_data.py
+│
+├── data/
+│   ├── raw/
+│   │   └── DATASET.xlsx
+│   └── processed/
+│       └── customer_360.duckdb
+│
+├── frontend/
+│
+├── scripts/
+│   ├── build_db.py
+│   ├── benchmark_agent.py
+│   └── run_backend.sh
+│
+├── tests/
+│
+├── e2e/
+│
+├── .env.example
+├── requirements.txt
+└── README.md
 ```
 
-Latency is dominated by DeepSeek round-trips (high variance between runs); the
-call/token counts are the stable, bounded part the design guarantees.
+---
 
-### Block response contract
+# Getting Started
 
-An assistant reply is an ordered array of blocks plus a `results` map keyed by
-`resultId`:
-
-```json
-{
-  "blocks": [
-    {"id": "b1", "type": "markdown", "content": "## تحلیل فروش ..."},
-    {"id": "b2", "type": "metric", "resultId": "r1", "label": "رشد فروش", "valueKey": "growth"},
-    {"id": "b3", "type": "chart", "resultId": "r1", "chartType": "line", "xKey": "month",
-     "series": [{"dataKey": "sales", "label": "فروش"}]}
-  ],
-  "results": {"r1": {"columns": ["month", "sales"], "rows": [...], "n_rows": 8}}
-}
-```
-
-Supported block types: `markdown`, `metric`, `chart`, `histogram`, `table`,
-`recommendation`, `customer_card`, `product_card`, `order_card`.
-
-The order of the array is the exact visual order in the chat. Structured blocks
-**reference** MCP results by `resultId` — the LLM never copies large data into
-Markdown. Business rules are enforced (actual cost over estimated, `COUNT(DISTINCT
-order_id)` for orders vs `SUM(quantity)` for units, latest CRM version, as-of
-semantics). Huge results (>1000 rows) are not analysed inline; the copilot tells
-the user the data is too large.
-
-### Always-respond & assumption handling
-
-- There is **no separate DB-intent classifier** — every question goes straight to
-  the LLM, which decides (via the system prompt) whether to plan queries or just
-  chat. No keyword heuristics or deterministic block post-processing.
-- The copilot **always produces an output**: LLM calls retry on transient
-  failures, and if block composition returns nothing usable, it falls back to a
-  plain conversational answer.
-- When a question is ambiguous ("an arbitrary customer", "some product"), the
-  agent picks a sensible concrete default (e.g. the most profitable customer),
-  **states the assumption** in the first markdown block, shows the results for
-  it, and ends with a markdown block explaining how the answer would change for
-  a different choice.
-
-### Run it
+## 1. Clone the repository
 
 ```bash
-python3 -m venv .venv && . .venv/bin/activate
-pip install -r backend/requirements.txt
-./scripts/run_backend.sh
-# or: uvicorn backend.main:app --reload --port 8000
+git clone <repository-url>
+cd <repository>
 ```
 
-## LLM configuration
+## 2. Create the Python environment
 
-Copy `.env.example` to `.env` and set `LLM_API_KEY`. Supports:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-- **OpenAI**: `LLM_PROVIDER=openai`, `LLM_API_KEY=sk-...`
-- **DeepSeek**: `LLM_PROVIDER=deepseek`, `LLM_API_KEY=sk-...`
-- **ArvanCloud AI Gateway**: `LLM_PROVIDER=arvan`, `LLM_API_KEY=...`, `LLM_BASE_URL=https://arvancloudai.ir/gateway/models/<Model>/<deployment-token>/v1`, `LLM_COOKIE=server_session_...=...` (this gateway uses `Authorization: apikey <key>` plus a session cookie instead of a bearer token; the cookie may need refreshing if it expires)
-- **Any OpenAI-compatible / local**: `LLM_PROVIDER=custom`, `LLM_BASE_URL=...`
+## 3. Install backend dependencies
 
-Without a key, the copilot still works but returns schema-only answers.
+```bash
+pip install -r backend/requirements.txt
+```
+
+## 4. Build the database
+
+```bash
+python scripts/build_db.py
+```
+
+## 5. Configure the LLM
+
+```bash
+cp .env.example .env
+```
+
+Set:
+
+```env
+LLM_PROVIDER=deepseek
+LLM_API_KEY=your_api_key
+```
+
+Supported providers include:
+
+```text
+OpenAI
+DeepSeek
+ArvanCloud AI Gateway
+OpenAI-compatible / local models
+```
+
+## 6. Start the backend
+
+```bash
+./scripts/run_backend.sh
+```
+
+or:
+
+```bash
+uvicorn backend.main:app --reload --port 8000
+```
+
+API:
+
+```text
+http://localhost:8000
+```
+
+Swagger:
+
+```text
+http://localhost:8000/docs
+```
+
+## 7. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+# Testing
+
+## Backend
+
+```bash
+pip install pytest pytest-asyncio
+python -m pytest tests/ -q
+```
 
 ## Frontend
 
-`frontend/vite.config.ts` proxies `/api` → `http://127.0.0.1:8000`. The frontend
-is **fully Persian (fa) and RTL** (`lang="fa" dir="rtl"`, Vazirmatn font) and
-renders **live data from the backend** — the mock-data layer has been removed.
-The copilot tries the live backend first and, if it is offline, shows an honest
-message.
-
 ```bash
-cd frontend && npm install && npm run dev
+cd frontend
+npx vitest run
 ```
 
-## Tests
+## End-to-End
+
+Start both services:
 
 ```bash
-# backend (pytest)
-pip install pytest pytest-asyncio
-python -m pytest tests/ -q
-
-# frontend (vitest)
-cd frontend && npx vitest run
+./scripts/run_backend.sh
 ```
-
-Tests cover Block schema validation & ordering, arbitrary block order, resultId
-resolution, huge-result handling, order-count vs quantity distinction, and the
-MCP query tool (server-side resultId, read-only enforcement, truncation,
-single-query business answers, failed-query retry).
-
-## End-to-end (Playwright)
-
-Playwright drives the real frontend chatbot against the live backend. Both
-servers must be running first:
 
 ```bash
-./scripts/run_backend.sh                 # FastAPI on :8000
-cd frontend && npm run dev               # Vite on :5173
+cd frontend
+npm run dev
 ```
 
-Then run the E2E suite:
+Then:
 
 ```bash
 cd e2e
-npm install                 # first time (installs @playwright/test)
-npx playwright install chromium   # first time (downloads browser)
-npx playwright test         # headless
-npx playwright test --headed  # watch the browser
+npm install
+npx playwright install chromium
+npx playwright test
 ```
 
-`e2e/tests/copilot.spec.mjs` opens the copilot, sends a greeting, requests a
-chart ("monthly sales trend"), and asserts a real chart renders (no generic
-error). It also verifies **multi-step chat** (a follow-up keeps context and
-returns a customer card). These hit the live DeepSeek API, so they take ~1-2 min.
+To watch the browser:
 
-## Copilot behaviour
+```bash
+npx playwright test --headed
+```
 
-- The live backend always responds; if it is unreachable the copilot says so
-  honestly instead of showing canned mock text.
-- The LLM agent **always answers in Persian** regardless of input language, and
-  the whole UI is RTL.
-- Data answers include **1-2 non-text blocks** (chart when it fits the intent,
-  plus a **customer/product card or table** whenever the user asks about
-  customers, products, or orders).
-- Multi-step questions reuse prior context (e.g. "that customer" refers back).
+---
+
+# Engineering Principles
+
+### 1. Deterministic calculations
+
+Financial and analytical metrics are calculated by code.
+
+**LLM interprets; code calculates.**
+
+### 2. Current state over historical events
+
+A complaint from six months ago should not automatically trigger a recommendation today.
+
+### 3. Evidence before explanation
+
+Every important recommendation should be traceable to data.
+
+### 4. Opportunity does not equal action
+
+Constraints such as payment behaviour, profitability, and relationship quality must be evaluated before an action is recommended.
+
+### 5. Structured AI output
+
+The LLM produces structured contracts rather than unrestricted UI text.
+
+### 6. Bounded context
+
+Large database results should never unnecessarily enter the conversation history.
+
+### 7. Honest failure states
+
+If the backend or LLM is unavailable, the application reports the actual state rather than displaying fabricated results.
+
+---
+
+# Definition of Success
+
+The MVP succeeds when a sales manager can open a customer and answer six questions in under 30 seconds:
+
+> **What is this customer's current situation?**
+
+> **What changed?**
+
+> **Is the problem still active?**
+
+> **Why does it matter?**
+
+> **What should I do next?**
+
+> **What evidence supports this recommendation?**
+
+If the system can reliably answer these questions, it has moved beyond a traditional CRM dashboard toward a **Customer Decision Intelligence system**.
+
+---
+
+# Current Implementation
+
+The repository currently includes:
+
+- DuckDB-based Customer 360 database
+- One table per source dataset
+- Read-only MCP database access
+- FastAPI backend
+- Customer Dashboard API
+- Customer List API
+- Customer 360 API
+- AI Copilot API
+- Structured AI response blocks
+- Result ID based context management
+- Bounded LLM context
+- Query reuse across conversations
+- Persian RTL frontend
+- Vitest backend/frontend coverage
+- Playwright end-to-end tests
+- Live database-backed UI without mock data
+
+---
+
+# Roadmap
+
+### Phase 1 — Data Foundation
+
+- [x] Normalize source datasets
+- [x] Build DuckDB database
+- [x] Implement read-only query layer
+- [x] Establish Customer 360 schema
+
+### Phase 2 — Intelligence
+
+- [ ] Current State Engine
+- [ ] Signal Engine
+- [ ] Customer Classification
+- [ ] Action Engine
+- [ ] Evidence model
+
+### Phase 3 — AI
+
+- [x] Database Copilot
+- [x] Structured AI responses
+- [x] Context reuse
+- [ ] CRM text extraction
+- [ ] Complaint intelligence
+- [ ] Evidence-grounded explanations
+
+### Phase 4 — Product
+
+- [x] Dashboard
+- [x] Customer list
+- [x] Customer 360
+- [x] Copilot
+- [ ] Action workflow
+- [ ] Account-manager feedback loop
+
+---
+
+## Product Principle
+
+> **Don't just tell the sales team what happened. Tell them what it means, what is still true, what to do next, and why.**
